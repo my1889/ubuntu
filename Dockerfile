@@ -13,11 +13,11 @@ COPY reboot.sh /usr/local/sbin/reboot
 
 RUN apt-get update && \
     apt-get install -y tzdata openssh-server sudo curl ca-certificates wget vim net-tools supervisor cron unzip iputils-ping telnet git iproute2 --no-install-recommends && \
-    # --- 修正后的 3x-ui 安装逻辑 ---
+    # --- 修复后的 3x-ui 安装逻辑 ---
     arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) && \
-    # 使用 API 获取真实的 tag 名称
+    # 使用官方 API 获取最新的 tag_name
     latest_version=$(curl -s https://github.com | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
-    # 确保下载链接完整正确
+    # 下载并解压
     wget -N https://github.com{latest_version}/x-ui-linux-${arch}.tar.gz && \
     tar zxvf x-ui-linux-${arch}.tar.gz && \
     mv x-ui /usr/local/x-ui && \
