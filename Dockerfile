@@ -13,20 +13,22 @@ COPY reboot.sh /usr/local/sbin/reboot
 
 RUN apt-get update && \
     apt-get install -y tzdata openssh-server sudo curl ca-certificates wget vim net-tools supervisor cron unzip iputils-ping telnet git iproute2 --no-install-recommends && \
-    # --- 修复后的 3x-ui 安装逻辑 ---
+    # 1. 自动识别架构 (amd64 或 arm64)
     arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) && \
-    # 使用官方 API 获取最新的 tag_name
+    # 2. 从 API 获取最新版本号 (这一步必须用 api.github.com)
     latest_version=$(curl -s https://github.com | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
-    # 下载并解压
+    # 3. 下载 (注意这里的 $ 符号和完整的下载路径)
     wget -N https://github.com{latest_version}/x-ui-linux-${arch}.tar.gz && \
+    # 4. 解压并安装
     tar zxvf x-ui-linux-${arch}.tar.gz && \
+    rm -rf /usr/local/x-ui && \
     mv x-ui /usr/local/x-ui && \
     rm x-ui-linux-${arch}.tar.gz && \
     chmod +x /usr/local/x-ui/x-ui /usr/local/x-ui/x-ui-linux-* /usr/local/x-ui/bin/xray-linux-* && \
-    # --- 基础配置 ---
+    # 5. 清理环境
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    mkdir /var/run/sshd && \
+    mkdir -p /var/run/sshd && \
     chmod +x /entrypoint.sh && \
     chmod +x /usr/local/sbin/reboot && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
