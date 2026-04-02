@@ -3,6 +3,10 @@ name: Build and Push Docker image
 on:
   workflow_dispatch:
 
+# --- 关键：添加这一段来消除 Node.js 20 警告 ---
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,23 +29,19 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          # 使用内置 token，解决 Password required 报错
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set date-based tag
         run: |
           echo "DATE_TAG=$(date +'%y.%-m.%-d')" >> $GITHUB_ENV
-          # 强制转小写，防止推送失败
           echo "REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build and push multi-arch image
-        # 使用 v6 版本消除 Node.js 20 警告
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          # 启用缓存加速
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
