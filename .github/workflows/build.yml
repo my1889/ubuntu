@@ -25,21 +25,25 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          # 修改这里：改为使用内置的 GITHUB_TOKEN，无需手动设置 Secret
+          # 使用内置 token，解决 Password required 报错
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set date-based tag
         run: |
           echo "DATE_TAG=$(date +'%y.%-m.%-d')" >> $GITHUB_ENV
-          # 额外建议：将仓库名强制转为小写，防止因大写字母导致推送失败
+          # 强制转小写，防止推送失败
           echo "REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build and push multi-arch image
-        uses: docker/build-push-action@v5
+        # 使用 v6 版本消除 Node.js 20 警告
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          # 启用缓存加速
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ghcr.io/${{ env.REPO_LOWER }}:${{ env.DATE_TAG }}
             ghcr.io/${{ env.REPO_LOWER }}:latest
