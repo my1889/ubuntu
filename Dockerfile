@@ -13,9 +13,11 @@ COPY reboot.sh /usr/local/sbin/reboot
 
 RUN apt-get update && \
     apt-get install -y tzdata openssh-server sudo curl ca-certificates wget vim net-tools supervisor cron unzip iputils-ping telnet git iproute2 --no-install-recommends && \
-    # --- 自动识别架构并安装 3x-ui 面板 ---
+    # --- 修正后的 3x-ui 安装逻辑 ---
     arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) && \
-    latest_version=$(curl -s https://github.com | grep tag_name | cut -d : -f 2 | sed 's/\"//g;s/\,//g;s/\ //g') && \
+    # 使用 API 获取真实的 tag 名称
+    latest_version=$(curl -s https://github.com | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
+    # 确保下载链接完整正确
     wget -N https://github.com{latest_version}/x-ui-linux-${arch}.tar.gz && \
     tar zxvf x-ui-linux-${arch}.tar.gz && \
     mv x-ui /usr/local/x-ui && \
@@ -30,7 +32,6 @@ RUN apt-get update && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     echo $TZ > /etc/timezone
 
-# 暴露 SSH(22) 和 3x-ui 默认端口(2053)
 EXPOSE 22 2053
 
 ENTRYPOINT ["/entrypoint.sh"]
